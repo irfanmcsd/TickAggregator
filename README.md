@@ -17,22 +17,16 @@ Collects 1-minute (configurable) candlestick data for hundreds of symbols, store
 
 ---
 
-## Architecture
+## Dependencies
 
-+-----------------+ +-----------------+ +-------------------+
-| Exchange APIs | ---> | KlineAggregator | ---> | PostgreSQL Storage |
-+-----------------+ +-----------------+ +-------------------+
+- **Rust** (latest stable)
+- **Tokio** — async runtime
+- **SQLx** — PostgreSQL async client
+- **Serde** — config serialization/deserialization
+- **Reqwest** — HTTP client
+- **Anyhow** — error handling
+- **OnceCell** — global lazy initialization
 
-Dependencies
+## License
 
-Rust (latest stable)
-Tokio — async runtime
-SQLx — PostgreSQL async client
-Serde — config serialization/deserialization
-Reqwest — HTTP client
-Anyhow — error handling
-OnceCell — global lazy initialization
-
-License
-
-MIT License. See LICENSE for details.
+MIT License. See [LICENSE](LICENSE) for details.
