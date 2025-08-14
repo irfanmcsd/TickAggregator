@@ -1,11 +1,11 @@
 mod pkg;
 
 use crate::pkg::aggregator::{symbol_rotator::SymbolRotator, ticker_aggregator::KlineAggregator};
+use crate::pkg::exchanges::exchange_entities::TickerInfo;
 use crate::pkg::config::SETTINGS;
 use crate::pkg::db::DB;
-use crate::pkg::dbcontext::entities::SymbolKlineData;
 use crate::pkg::dbcontext::kline::save_klines;
-use crate::pkg::exchanges::exchange_client::{TickerInfo, core_futures_all_tickers};
+use crate::pkg::exchanges::exchange_client::{core_futures_all_tickers};
 
 use dotenv::dotenv;
 use log::{error, info, warn};
@@ -53,7 +53,7 @@ async fn main() {
     let batch_size = 50;
     let mut rotator = SymbolRotator::new(symbols, batch_size);
 
-    let mut k_agg = KlineAggregator::new(settings_ref.debug);
+    let k_agg = KlineAggregator::new(settings_ref.debug);
 
     let refresh_interval_secs = if settings_ref.refresh_seconds < 4 {
         4
@@ -129,7 +129,7 @@ async fn main() {
                             for t in filtered {
                                 if let (Ok(price), Some(volume_str)) = (t.last_price.parse::<f64>(), t.vol_24h.as_deref()) {
                                     if let Ok(volume) = volume_str.parse::<f64>() {
-                                        k_agg.add_price(&t.symbol, price, volume);
+                                        k_agg.add_price(&t.symbol, price, volume).await;
                                     } else {
                                         warn!("❌ Failed to parse volume for symbol {}", t.symbol);
                                     }

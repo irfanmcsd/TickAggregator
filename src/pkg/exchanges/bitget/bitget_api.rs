@@ -1,35 +1,10 @@
 use crate::pkg::exchanges::bitget::rate_limited_client::RateLimitedClient;
-use anyhow::{Context, Result, anyhow};
-use serde::Deserialize;
-use std::time::Duration;
-
-#[derive(Debug, Deserialize)]
-pub struct BitgetTickerInfo {
-    pub symbol: String, // e.g., BTCUSDT
-    #[serde(rename = "last")]
-    pub last_price: String,
-    #[serde(rename = "high24h")]
-    pub high_24h: String,
-    #[serde(rename = "low24h")]
-    pub low_24h: String,
-    #[serde(rename = "open24h")]
-    pub open_24h: String,
-    #[serde(rename = "changePercent")]
-    pub change_24h_percent: String,
-    #[serde(rename = "baseVolume")]
-    pub base_volume: String,
-    #[serde(rename = "quoteVolume")]
-    pub quote_volume: String,
-    #[serde(rename = "ts")]
-    pub timestamp: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct BitgetResponse<T> {
-    code: String,
-    msg: String,
-    data: T,
-}
+use crate::pkg::exchanges::exchange_entities::BitgetTickerInfo;
+use crate::pkg::exchanges::exchange_entities::TickerInfo;
+use crate::pkg::exchanges::exchange::ExchangeApi;
+use anyhow::{Result, anyhow};
+use std::time::{SystemTime, UNIX_EPOCH};
+use async_trait::async_trait;
 
 pub struct BitgetApi {
     client: RateLimitedClient,
@@ -41,12 +16,16 @@ impl BitgetApi {
             client: RateLimitedClient::new(None),
         }
     }
+}
 
-    pub async fn get_all_tickers(&self) -> Result<Vec<BitgetTickerInfo>> {
+
+#[async_trait]
+impl ExchangeApi for BitgetApi {
+    async fn get_all_tickers(&self) -> Result<Vec<TickerInfo>> {
         let url = "https://api.bitget.com/api/mix/v1/market/tickers?productType=umcbl";
         let req = reqwest::Client::new()
             .get(url)
-            .timeout(Duration::from_secs(10))
+            .timeout(std::time::Duration::from_secs(10))
             .build()?;
 
         let resp = self.client.send_with_retry(req, 1).await?;
@@ -58,11 +37,37 @@ impl BitgetApi {
             return Err(anyhow!("Non-200 response: {} - {}", status.as_u16(), body));
         }
 
-        let tickers: Vec<BitgetTickerInfo> = serde_json::from_slice(&bytes)?;
-        Ok(tickers)
+        // Deserialize into Bitget-specific struct
+        let bitget_tickers: Vec<BitgetTickerInfo> = serde_json::from_slice(&bytes)?;
+
+        // Convert to standard TickerInfo
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
+
+        let standard_tickers = bitget_tickers
+            .into_iter()
+            .map(|b| TickerInfo {
+                symbol: b.symbol,
+                last_price: b.last_price,
+                high_24h: Some(b.high_24h),
+                low_24h: Some(b.low_24h),
+                vol_24h: Some(b.base_volume),
+                change_24h: Some(b.change_24h_percent),
+                exchange: "Bitget".to_string(),
+                timestamp: now,
+            })
+            .collect();
+
+        Ok(standard_tickers)
     }
 
-    pub async fn get_ticker_info(&self, symbol: &str) -> Result<BitgetTickerInfo> {
+    fn name(&self) -> &str {
+        "Bitget"
+    }
+
+    /*pub async fn get_ticker_info(&self, symbol: &str) -> Result<BitgetTickerInfo> {
         let url = format!(
             "https://api.bitget.com/api/v2/market/ticker?symbol={}",
             symbol
@@ -84,5 +89,5 @@ impl BitgetApi {
             .context("JSON parse failed")?;
 
         Ok(ticker)
-    }
+    }*/
 }

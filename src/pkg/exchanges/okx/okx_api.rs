@@ -1,32 +1,11 @@
-use crate::pkg::exchanges::okx::rate_limited_client::RateLimitedClient;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Result, anyhow};
+use async_trait::async_trait;
 use serde::Deserialize;
-use std::time::Duration;
+use std::time::{SystemTime, UNIX_EPOCH};
 
-#[derive(Debug, Deserialize)]
-pub struct OKXTickerInfo {
-    #[serde(rename = "instId")]
-    pub instrument_id: String,
-    #[serde(rename = "last")]
-    pub last_price: String,
-    #[serde(rename = "open24h")]
-    pub open_24h: String,
-    #[serde(rename = "high24h")]
-    pub high_24h: String,
-    #[serde(rename = "low24h")]
-    pub low_24h: String,
-    #[serde(rename = "vol24h")]
-    pub volume_24h: String,
-    #[serde(rename = "change24h")]
-    pub change_24h_pct: Option<String>, // may not be provided, so optional
-}
-
-#[derive(Debug, Deserialize)]
-struct OKXResponse<T> {
-    code: String,
-    msg: Option<String>,
-    data: T,
-}
+use crate::pkg::exchanges::exchange::ExchangeApi;
+use crate::pkg::exchanges::exchange_entities::{OKXTickerInfo, TickerInfo};
+use crate::pkg::exchanges::okx::rate_limited_client::RateLimitedClient;
 
 pub struct OkxApi {
     client: RateLimitedClient,
@@ -38,12 +17,15 @@ impl OkxApi {
             client: RateLimitedClient::new(None),
         }
     }
+}
 
-    pub async fn get_all_tickers(&self) -> Result<Vec<OKXTickerInfo>> {
+#[async_trait]
+impl ExchangeApi for OkxApi {
+    async fn get_all_tickers(&self) -> Result<Vec<TickerInfo>> {
         let url = "https://www.okx.com/api/v5/market/tickers?instType=SWAP";
         let req = reqwest::Client::new()
             .get(url)
-            .timeout(Duration::from_secs(10))
+            .timeout(std::time::Duration::from_secs(10))
             .build()?;
 
         let resp = self.client.send_with_retry(req, 1).await?;
@@ -55,11 +37,41 @@ impl OkxApi {
             return Err(anyhow!("Non-200 response: {} - {}", status.as_u16(), body));
         }
 
-        let tickers: Vec<OKXTickerInfo> = serde_json::from_slice(&bytes)?;
-        Ok(tickers)
+        #[derive(Debug, Deserialize)]
+        struct OkxResponse {
+            data: Vec<OKXTickerInfo>,
+        }
+
+        let okx_response: OkxResponse = serde_json::from_slice(&bytes)?;
+
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
+
+        let standard_tickers = okx_response
+            .data
+            .into_iter()
+            .map(|o| TickerInfo {
+                symbol: o.instrument_id,
+                last_price: o.last_price,
+                high_24h: Some(o.high_24h),
+                low_24h: Some(o.low_24h),
+                vol_24h: Some(o.volume_24h),
+                change_24h: o.change_24h_pct,
+                exchange: "OKX".to_string(),
+                timestamp: now,
+            })
+            .collect();
+
+        Ok(standard_tickers)
     }
 
-    pub async fn get_ticker_info(&self, inst_id: &str) -> Result<OKXTickerInfo> {
+    fn name(&self) -> &str {
+        "OKX"
+    }
+
+    /*pub async fn get_ticker_info(&self, inst_id: &str) -> Result<OKXTickerInfo> {
         let url = format!(
             "https://www.okx.com/api/v5/market/ticker?instId={}",
             inst_id
@@ -81,5 +93,5 @@ impl OkxApi {
             .context("JSON parse failed")?;
 
         Ok(ticker)
-    }
+    }*/
 }
