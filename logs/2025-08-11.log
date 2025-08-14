@@ -1,0 +1,3 @@
+[2025-08-11 16:56:04][INFO][hello_rust] Completed main function execution
+[2025-08-11 16:56:04][WARN][hello_rust] This is a warning
+[2025-08-11 16:56:04][ERROR][hello_rust] This is an error
