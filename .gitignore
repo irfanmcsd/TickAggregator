@@ -1,1 +1,8 @@
 /target
+
+# Ignore log files
+application.log
+
+# Optional: ignore all logs in a logs/ directory
+logs/
+*.log
