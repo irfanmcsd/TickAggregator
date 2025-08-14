@@ -1,8 +1,24 @@
+# Rust build artifacts
 /target
+**/target
 
-# Ignore log files
+# Ignore logs
 application.log
-
-# Optional: ignore all logs in a logs/ directory
 logs/
 *.log
+
+# Ignore build output directories
+/bin/
+
+# Ignore archives
+*.tar.gz
+
+# Ignore temporary files
+*.tmp
+*.swp
+*.DS_Store
+
+# Ignore IDE/editor files
+.vscode/
+.idea/
+*.iml
