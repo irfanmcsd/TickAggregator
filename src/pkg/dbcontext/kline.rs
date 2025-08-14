@@ -2,7 +2,7 @@ use crate::pkg::dbcontext::entities::{SymbolKlineData, clean_symbol};
 use anyhow::Result;
 use log::info;
 use sqlx::{PgPool, Postgres, Transaction, postgres::PgQueryResult};
-use sqlx::Executor;
+
 
 pub async fn save_klines(pool: &PgPool, data: &[SymbolKlineData], instance: &str) -> Result<()> {
     if data.is_empty() {

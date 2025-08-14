@@ -3,8 +3,15 @@ use crate::pkg::exchanges::exchange_entities::BitgetTickerInfo;
 use crate::pkg::exchanges::exchange_entities::TickerInfo;
 use crate::pkg::exchanges::exchange::ExchangeApi;
 use anyhow::{Result, anyhow};
-use std::time::{SystemTime, UNIX_EPOCH};
 use async_trait::async_trait;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+struct BitgetResponse<T> {
+    //code: String,
+    //msg: String,
+    data: T,
+}
 
 pub struct BitgetApi {
     client: RateLimitedClient,
@@ -21,7 +28,7 @@ impl BitgetApi {
 
 #[async_trait]
 impl ExchangeApi for BitgetApi {
-    async fn get_all_tickers(&self) -> Result<Vec<TickerInfo>> {
+     async fn get_all_tickers(&self) -> Result<Vec<TickerInfo>> {
         let url = "https://api.bitget.com/api/mix/v1/market/tickers?productType=umcbl";
         let req = reqwest::Client::new()
             .get(url)
@@ -34,38 +41,32 @@ impl ExchangeApi for BitgetApi {
 
         if !status.is_success() {
             let body = String::from_utf8_lossy(&bytes);
-            return Err(anyhow!("Non-200 response: {} - {}", status.as_u16(), body));
+            return Err(anyhow!(
+                "Non-200 response: {} - {}",
+                status.as_u16(),
+                body
+            ));
         }
 
-        // Deserialize into Bitget-specific struct
-        let bitget_tickers: Vec<BitgetTickerInfo> = serde_json::from_slice(&bytes)?;
+        // Deserialize into BitgetResponse<Vec<BitgetTickerInfo>>
+        let parsed: BitgetResponse<Vec<BitgetTickerInfo>> = serde_json::from_slice(&bytes)?;
 
-        // Convert to standard TickerInfo
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_millis();
-
-        let standard_tickers = bitget_tickers
+        let standard_tickers = parsed
+            .data
             .into_iter()
             .map(|b| TickerInfo {
                 symbol: b.symbol,
                 last_price: b.last_price,
-                high_24h: Some(b.high_24h),
-                low_24h: Some(b.low_24h),
                 vol_24h: Some(b.base_volume),
-                change_24h: Some(b.change_24h_percent),
-                exchange: "Bitget".to_string(),
-                timestamp: now,
             })
             .collect();
 
         Ok(standard_tickers)
     }
 
-    fn name(&self) -> &str {
+    /*fn name(&self) -> &str {
         "Bitget"
-    }
+    }*/
 
     /*pub async fn get_ticker_info(&self, symbol: &str) -> Result<BitgetTickerInfo> {
         let url = format!(

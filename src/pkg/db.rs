@@ -2,7 +2,7 @@ use crate::pkg::config::DatabaseConfig;
 use anyhow::Result;
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::env;
-use log::{info, warn, error};
+use log::{info, error};
 
 pub struct DB {
     pub pool: PgPool,

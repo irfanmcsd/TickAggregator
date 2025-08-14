@@ -1,12 +1,18 @@
 use anyhow::{Result, anyhow};
 use async_trait::async_trait;
 use serde::Deserialize;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::pkg::exchanges::exchange::ExchangeApi;
 use crate::pkg::exchanges::exchange_entities::{OKXTickerInfo, TickerInfo};
 use crate::pkg::exchanges::okx::rate_limited_client::RateLimitedClient;
 
+
+#[derive(Debug, Deserialize)]
+struct OkxResponse<T> {
+    code: String,
+    msg: String,
+    data: T,
+}
 pub struct OkxApi {
     client: RateLimitedClient,
 }
@@ -34,42 +40,36 @@ impl ExchangeApi for OkxApi {
 
         if !status.is_success() {
             let body = String::from_utf8_lossy(&bytes);
-            return Err(anyhow!("Non-200 response: {} - {}", status.as_u16(), body));
+            return Err(anyhow!(
+                "Non-200 response: {} - {}",
+                status.as_u16(),
+                body
+            ));
         }
 
-        #[derive(Debug, Deserialize)]
-        struct OkxResponse {
-            data: Vec<OKXTickerInfo>,
+        // Parse into wrapper struct
+        let parsed: OkxResponse<Vec<OKXTickerInfo>> = serde_json::from_slice(&bytes)?;
+
+        if parsed.code != "0" {
+            return Err(anyhow!("OKX API error: {} - {}", parsed.code, parsed.msg));
         }
 
-        let okx_response: OkxResponse = serde_json::from_slice(&bytes)?;
-
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_millis();
-
-        let standard_tickers = okx_response
+        let standard_tickers = parsed
             .data
             .into_iter()
             .map(|o| TickerInfo {
                 symbol: o.instrument_id,
                 last_price: o.last_price,
-                high_24h: Some(o.high_24h),
-                low_24h: Some(o.low_24h),
                 vol_24h: Some(o.volume_24h),
-                change_24h: o.change_24h_pct,
-                exchange: "OKX".to_string(),
-                timestamp: now,
             })
             .collect();
 
         Ok(standard_tickers)
     }
 
-    fn name(&self) -> &str {
+    /*fn name(&self) -> &str {
         "OKX"
-    }
+    }*/
 
     /*pub async fn get_ticker_info(&self, inst_id: &str) -> Result<OKXTickerInfo> {
         let url = format!(

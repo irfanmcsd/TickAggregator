@@ -2,7 +2,7 @@ use sqlx::FromRow;
 
 #[derive(Debug, Clone, FromRow)]
 pub struct SymbolKlineData {
-    pub id: i64,
+    // pub id: i64,
     pub symbol: String,
     pub interval: String,
     pub open: f64,
@@ -10,13 +10,13 @@ pub struct SymbolKlineData {
     pub low: f64,
     pub close: f64,
     pub open_time: i64,
-    pub instance: Option<String>,
+    // pub instance: Option<String>,
     pub volume: f64,
     pub trade_count: i64,
 }
 
 pub fn clean_symbol(raw: &str) -> String {
-    let mut symbol = raw.to_uppercase();
+    let symbol = raw.to_uppercase();
 
     let suffixes = [
         "-USDT-SWAP", "-USDT", "-USD-SWAP", "-USD", "-PERP", "-FUTURE", "-SWAP",

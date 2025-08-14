@@ -1,5 +1,6 @@
 exchange: bitget
 instance: bitget
+RefreshSeconds: 60 # How often to refresh the exchange data (60 seconds enought for AI model training or simulation testing)
 symbol:
 - 10000000AIDOGEUSDT_UMCBL
 - 1000BONKUSDT_UMCBL
@@ -247,10 +248,4 @@ Streaming:
 Debug: false
 database:
   provider: postgresql
-  connectionString: "" # 🔐 Leave empty. Set DB config via env vars:
-                       # DB_HOST=localhost
-                       # DB_PORT=5432
-                       # DB_USER=postgres
-                       # DB_PASSWORD=yourpassword
-                       # DB_NAME=kline_db
-RefreshSeconds : 5 # 5 second interval (min 4)
+  connectionString: ''

@@ -1,4 +1,4 @@
-use std::fs;
+/*use std::fs;
 use chrono::Local;
 use fern::Dispatch;
 use log::LevelFilter;
@@ -42,4 +42,4 @@ pub fn init_logger() {
         )
         .apply()
         .unwrap();
-}
+}*/

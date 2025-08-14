@@ -39,7 +39,7 @@ pub struct RateLimitedClient {
     http_client: Client,
     rate_limits: Arc<Mutex<HashMap<String, RateLimitInfo>>>,
     max_retries: usize,
-    default_wait: Duration,
+    // default_wait: Duration,
 }
 
 impl RateLimitedClient {
@@ -49,7 +49,7 @@ impl RateLimitedClient {
             http_client,
             rate_limits: Arc::new(Mutex::new(HashMap::new())),
             max_retries: 5,
-            default_wait: Duration::from_secs(5),
+            //default_wait: Duration::from_secs(5),
         }
     }
 
@@ -101,7 +101,7 @@ impl RateLimitedClient {
     }
 
     async fn apply_rate_limiting(&self, key: &str, weight: i32) {
-        let mut rate_limits = self.rate_limits.lock().await;
+        let rate_limits = self.rate_limits.lock().await;
 
         if let Some(info) = rate_limits.get(key) {
             if info.should_delay(weight) {

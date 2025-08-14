@@ -164,7 +164,7 @@ impl KlineAggregator {
         }
 
         SymbolKlineData {
-            id: 0, // or whatever default you want
+            //id: 0, // or whatever default you want
             symbol: symbol.to_string(),
             interval: interval.to_string(),
             open,
@@ -172,7 +172,7 @@ impl KlineAggregator {
             high,
             low,
             open_time,
-            instance: None, // or Some("your_instance".to_string())
+            //instance: None, // or Some("your_instance".to_string())
             volume: volume_sum,
             trade_count: group.len() as i64,
         }

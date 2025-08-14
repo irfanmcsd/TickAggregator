@@ -1,10 +1,25 @@
-use async_trait::async_trait;
 use anyhow::{Result, anyhow};
-use std::time::{SystemTime, UNIX_EPOCH};
+use async_trait::async_trait;
+
 
 use crate::pkg::exchanges::bybit::rate_limited_client::RateLimitedClient;
-use crate::pkg::exchanges::exchange_entities::{BybitTickerInfo, TickerInfo};
 use crate::pkg::exchanges::exchange::ExchangeApi;
+use crate::pkg::exchanges::exchange_entities::{BybitTickerInfo, TickerInfo};
+
+#[derive(Debug, serde::Deserialize)]
+struct BybitResponse {
+    #[serde(rename = "retCode")]
+    ret_code: i32,
+    #[serde(rename = "retMsg")]
+    ret_msg: String,
+    result: BybitResult,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct BybitResult {
+    //category: String,
+    list: Vec<BybitTickerInfo>,
+}
 
 pub struct BybitApi {
     client: RateLimitedClient,
@@ -36,38 +51,35 @@ impl ExchangeApi for BybitApi {
             return Err(anyhow!("Non-200 response: {} - {}", status.as_u16(), body));
         }
 
-        // Deserialize into Bybit's specific ticker format
-        let bybit_tickers: Vec<BybitTickerInfo> = serde_json::from_slice(&bytes)?;
+        let parsed: BybitResponse = serde_json::from_slice(&bytes)?;
+        if parsed.ret_code != 0 {
+            return Err(anyhow!("Bybit API error: {}", parsed.ret_msg));
+        }
 
-        // Single timestamp for all tickers
-        let now = SystemTime::now()
+        /*let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
-            .as_millis();
+            .as_millis();*/
 
-        // Convert into standard TickerInfo
-        let standard_tickers = bybit_tickers
+        let standard_tickers = parsed
+            .result
+            .list
             .into_iter()
             .map(|b| TickerInfo {
                 symbol: b.symbol,
                 last_price: b.last_price,
-                high_24h: Some(b.high_price_24h),
-                low_24h: Some(b.low_price_24h),
                 vol_24h: Some(b.volume_24h),
-                change_24h: Some(b.price_24h_pct),
-                exchange: "Bybit".to_string(),
-                timestamp: now,
             })
             .collect();
 
         Ok(standard_tickers)
     }
 
-    fn name(&self) -> &str {
+    /*fn name(&self) -> &str {
         "Bybit"
-    }
+    }*/
 
-     /*pub async fn get_ticker_info(&self, symbol: &str) -> Result<BybitTickerInfo> {
+    /*pub async fn get_ticker_info(&self, symbol: &str) -> Result<BybitTickerInfo> {
         let url = format!(
             "https://api.bybit.com/v5/market/ticker?category=linear&symbol={}",
             symbol

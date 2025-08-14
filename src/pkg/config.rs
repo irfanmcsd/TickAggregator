@@ -1,4 +1,3 @@
-use anyhow::{Context, Result};
 use once_cell::sync::Lazy;
 use serde::{Serialize, Deserialize};
 use std::{fs, path::Path, sync::Arc};
