@@ -1,18 +1,18 @@
 use sqlx::FromRow;
+use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, FromRow)]
 pub struct SymbolKlineData {
-    // pub id: i64,
     pub symbol: String,
     pub interval: String,
     pub open: f64,
     pub high: f64,
     pub low: f64,
     pub close: f64,
-    pub open_time: i64,
-    // pub instance: Option<String>,
+    pub open_time: DateTime<Utc>,
     pub volume: f64,
     pub trade_count: i64,
+    pub instance: Option<String>,
 }
 
 pub fn clean_symbol(raw: &str) -> String {

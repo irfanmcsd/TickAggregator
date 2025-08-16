@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
-
+use chrono::{TimeZone, Utc};
 use log::debug;
 use tokio::sync::Mutex;
 
@@ -164,17 +164,16 @@ impl KlineAggregator {
         }
 
         SymbolKlineData {
-            //id: 0, // or whatever default you want
             symbol: symbol.to_string(),
             interval: interval.to_string(),
             open,
             close,
             high,
             low,
-            open_time,
-            //instance: None, // or Some("your_instance".to_string())
+            open_time: Utc.timestamp_millis(open_time), // ✅ convert i64 -> DateTime<Utc>
             volume: volume_sum,
             trade_count: group.len() as i64,
+            instance: None, // or Some("your_instance".to_string())
         }
     }
 }
