@@ -1,6 +1,6 @@
 exchange: bitget
 instance: bitget
-RefreshSeconds: 60
+RefreshSeconds: 20
 symbol:
 - 10000000AIDOGEUSDT_UMCBL
 - 1000BONKUSDT_UMCBL
@@ -248,4 +248,10 @@ Streaming:
 Debug: false
 database:
   provider: postgresql
-  connectionString: ''  # ⚠️ TimescaleDB required. Make sure TimescaleDB extension is installed and hypertables are created before running the app.
+  connectionString: ''
+clickhouse:
+  enabled: true
+  url: "https://m2nwgueubr.us-west-2.aws.clickhouse.cloud:8443"
+  user: "default"
+  password: "***"
+  database: "default"

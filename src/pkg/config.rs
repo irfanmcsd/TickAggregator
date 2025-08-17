@@ -1,5 +1,5 @@
 use once_cell::sync::Lazy;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::{fs, path::Path, sync::Arc};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -82,21 +82,31 @@ pub struct AppSettings {
     pub debug: bool,
     #[serde(rename = "database")]
     pub database: DatabaseConfig,
+
+    #[serde(rename = "clickhouse")]
+    pub clickhouse: ClickHouseConfig,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ClickHouseConfig {
+    pub enabled: bool,
+    pub url: String,
+    pub user: String,
+    pub password: String,
+    pub database: String,
 }
 
 /// Global, thread-safe settings shared across the app.
 /// `Arc` allows cheap cloning of the reference for multi-thread usage.
-pub static SETTINGS: Lazy<Arc<AppSettings>> = Lazy::new(|| {
-    Arc::new(load_config("appsettings.yaml"))
-});
-
+pub static SETTINGS: Lazy<Arc<AppSettings>> =
+    Lazy::new(|| Arc::new(load_config("appsettings.yaml")));
 
 fn load_config<P: AsRef<Path>>(path: P) -> AppSettings {
     let data = fs::read_to_string(&path)
         .unwrap_or_else(|e| panic!("Failed to read config file {:?}: {}", path.as_ref(), e));
 
-    let settings: AppSettings = serde_yaml::from_str(&data)
-        .unwrap_or_else(|e| panic!("Failed to parse config: {}", e));
+    let settings: AppSettings =
+        serde_yaml::from_str(&data).unwrap_or_else(|e| panic!("Failed to parse config: {}", e));
 
     println!("✅ App settings loaded from {:?}", path.as_ref());
     settings

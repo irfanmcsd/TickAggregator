@@ -12,7 +12,6 @@ pub struct SymbolKlineData {
     pub open_time: DateTime<Utc>,
     pub volume: f64,
     pub trade_count: i64,
-    pub instance: Option<String>,
 }
 
 pub fn clean_symbol(raw: &str) -> String {

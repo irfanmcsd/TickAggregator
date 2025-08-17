@@ -170,10 +170,12 @@ impl KlineAggregator {
             close,
             high,
             low,
-            open_time: Utc.timestamp_millis(open_time), // ✅ convert i64 -> DateTime<Utc>
+            open_time: Utc.timestamp_millis_opt(open_time)
+                .single()
+                .unwrap_or_else(|| panic!("Invalid timestamp: {}", open_time)),
             volume: volume_sum,
             trade_count: group.len() as i64,
-            instance: None, // or Some("your_instance".to_string())
+
         }
     }
 }
