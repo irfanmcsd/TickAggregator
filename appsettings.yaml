@@ -246,8 +246,8 @@ Streaming:
     - localhost:9092
     Topic: tickdata
 Debug: false
-database:
-  provider: postgresql
+database: 
+  provider: postgresql # timesdb extension must be installed and configured for postgre => database
   connectionString: ''
 clickhouse:
   enabled: true
